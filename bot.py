@@ -27,9 +27,9 @@ def hello(update, context):
                              text="Привет! Я кофейный бот, который поможет тебе найти лучший кофе поблизости. "
                                   "Введите команду /coffee чтобы оставить отзыв")
 
-ASK_NAME, ASK_TYPE, ASK_RATING, ASK_COMMENT, ASK_LOCATION = 1,2,3,4,5
+ASK_NAME, ASK_TYPE,ASK_PRICE, ASK_RATING, ASK_COMMENT, ASK_LOCATION = 0,1,2,3,4,5
 data = dict()
-empty_review = ["","","",""]
+empty_review = ["","","","",""]
 # оставить отзыв
 def coffee(update,context):
     context.bot.send_message(chat_id=update.effective_chat.id,text="Создаю новый отзыв. Пожалуйста, введите название кофейни.")
@@ -37,34 +37,38 @@ def coffee(update,context):
 
 #Обработка информации
 def proceedName(update,context):
-    data[update.message.from_user.username] = empty_review
-    data[update.message.from_user.username][ASK_NAME-1]=(update.message.text+'\n')
+    data[update.message.from_user.username] = empty_review.copy()
+    data[update.message.from_user.username][ASK_NAME]=(update.message.text+',')
     context.bot.send_message(chat_id=update.effective_chat.id,
                              text="Пожалуйста, введите вид кофе.")
     return ASK_TYPE
+
 def proceedType(update,context):
-    data[update.message.from_user.username] = empty_review
-    data[update.message.from_user.username][ASK_TYPE-1]=(update.message.text+'\n')
-    context.bot.send_message(chat_id=update.effective_chat.id, text="Пожалуйста, введите оценку от 1 до 10.")
+    data[update.message.from_user.username][ASK_TYPE]=(update.message.text+',')
+    context.bot.send_message(chat_id=update.effective_chat.id, text="Пожалуйста, введите цену.")
+    return ASK_PRICE
+
+def proceedPrice(update,context):
+    data[update.message.from_user.username][ASK_PRICE]=(update.message.text+',')
+    context.bot.send_message(chat_id=update.effective_chat.id,
+                             text="Пожалуйста, введите рейтинг.")
     return ASK_RATING
 
 def proceedRating(update,context):
-    data[update.message.from_user.username] = empty_review
-    data[update.message.from_user.username][ASK_RATING-1]=(update.message.text+"\n")
+    data[update.message.from_user.username][ASK_RATING]=(update.message.text+",")
     context.bot.send_message(chat_id=update.effective_chat.id, text="Пожалуйста, введите комментарий (- если нет комментариев).")
     return ASK_COMMENT
 
 def proceedComment(update,context):
-    data[update.message.from_user.username] = empty_review
-    data[update.message.from_user.username][ASK_COMMENT-1]=(update.message.text+"\n")
+    data[update.message.from_user.username][ASK_COMMENT]=(update.message.text+",")
     context.bot.send_message(chat_id=update.effective_chat.id,text="Пожалуйста, скиньте локацию кофейни.")
     return ASK_LOCATION
 
 def proceedLocation(update,context):
     location=update.message.location
     textdata=""
-    for i in range(1,ASK_COMMENT):
-        textdata+=data[update.message.from_user.username][i-1]
+    for i in range(ASK_LOCATION):
+        textdata+=data[update.message.from_user.username][i]
     dump.data_with_location("text", textdata+str(location.longitude)+','+str(location.latitude),
                             update.message.from_user.username,
                             update.message.location)
@@ -84,6 +88,8 @@ ch=ConversationHandler(
         ASK_NAME: [MessageHandler(Filters.text, proceedName)],
 
         ASK_TYPE: [MessageHandler(Filters.text, proceedType)],
+
+        ASK_PRICE: [MessageHandler(Filters.text,proceedPrice)],
 
         ASK_RATING: [MessageHandler(Filters.text, proceedRating)],
 
